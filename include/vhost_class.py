@@ -32,7 +32,7 @@ class vhost_class():
         self.postfix = self.ini.get_option('general', 'postfix')
         self.name = name
         self.use_name = self.name + self.postfix
-        self.destination = self.hosts_dir + '/' + self.use_name + '.conf'
+        self.destination = self.hosts_dir + '/' + self.use_name
         
         """ status flags """
         self.db_created = False
@@ -214,7 +214,7 @@ class vhost_class():
         os.system(self.ini.get_option('general', 'reload_command'))
 
     def enable(self, name):
-        target = self.enabled_dir + '/' + self.use_name
+        target = self.enabled_dir + '/' + self.use_name + '.conf'
         os.symlink(self.destination, target)
         self.install_hosts()
 
