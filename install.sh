@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+python -c 'import sys; print(sys.version[:3])' > ver
+
 if [ -f "/usr/bin/vhost" ];
 then
 echo 'Reinstallation.'
@@ -14,6 +16,8 @@ echo 'Installing files'
 cp -R --remove-destination etc/config.ini ~/.vhost/
 cp -R --remove-destination share/* ~/.vhost/share
 cp -R --remove-destination vhost.py /usr/bin/vhost
-cp -R --remove-destination include/*.py /usr/lib/python2.6
+cp -R --remove-destination include/*.py /usr/lib/python`cat ver`
+
+chmod +x /usr/bin/vhost
 
 echo 'Done. Now run vhost -h to get help'

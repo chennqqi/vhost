@@ -87,6 +87,12 @@ def get_parser():
     )
     
     parser.add_argument(
+        "-z", "--in-public",
+        action="store_true",  default=None,
+        dest="remove_data", help="create vhost in subdirectory of DOCUMENT ROOT"
+    )
+    
+    parser.add_argument(
         "--db-create-user",
         action="store_true",  default=None,
         dest="db_create_user", help="create a database user"
