@@ -1,0 +1,22 @@
+{
+    "name": "alex-oleshkevich/vhost",
+    "description": "Apache virtual host and MySQL databases helper for developers.",
+    "require": {
+        "symfony/console": "~2.5",
+        "symfony/process": "~2.5",
+        "symfony/config": "~2.5"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alex Oleshkevich",
+            "email": "alex.oleshkevich@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Vhost\\": "src/Vhost"
+        }
+    }
+}
