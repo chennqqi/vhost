@@ -1,15 +1,18 @@
 <?php
 namespace Vhost\Command;
 
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Vhost\VhostManager;
 
-class DisableVirtualHostCommand extends CreateVirtualHostCommand
+class DisableVirtualHostCommand extends Command
 {
     public function configure()
     {
         $this->setName('disable');
+        $this->setAliases(['d']);
         $this->setDescription('Disable virtual host');
         $this->setHelp('Disable virtual host');
         $this->addArgument('name', InputArgument::REQUIRED, 'Name of the host');
@@ -17,13 +20,13 @@ class DisableVirtualHostCommand extends CreateVirtualHostCommand
     
     public function execute(InputInterface $input, OutputInterface $output)
     {
+        /* @var $vhostManager VhostManager */
+        $vhostManager = $this->getHelper('vhost_manager');
         $name = $input->getArgument('name');
-        $vhostName = $this->generateHostName($name);
         
-        if (!$this->isVhostEnabled($vhostName)) {
+        if (!$vhostManager->isEnabled($name)) {
             return $output->writeln('This virtual host is not enabled.');
         }
-        
-        $this->disable($vhostName);
+        $vhostManager->disable($name);
     }
 }

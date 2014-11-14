@@ -39,7 +39,7 @@ class Path extends AbstractHelper
      * @param bool $shouldCreate
      * @return string
      */
-    public function getPath($path, $shouldCreate = false)
+    public function get($path, $shouldCreate = false)
     {
         $path = $this->getAppHomeDirectory($shouldCreate) . DIRECTORY_SEPARATOR . $path;
         if ($shouldCreate) {

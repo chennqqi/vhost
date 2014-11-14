@@ -13,9 +13,13 @@ use Vhost\Command\EnableVirtualHostCommand;
 use Vhost\Command\InstallCommand;
 use Vhost\Helper\Config;
 use Vhost\Helper\Path;
+use Vhost\VhostManager;
 
 try {
     $pathHelper = new Path;
+    $configHelper = new Config($pathHelper->get('config.ini'));
+    
+    $vhostManager = new VhostManager($configHelper, $pathHelper);
 
     $application = new Application('vhost', '3.0');
     $application->setCatchExceptions(true);
@@ -26,7 +30,8 @@ try {
     $application->add(new HelpCommand);
     $application->add(new ListCommand);
 
-    $application->getHelperSet()->set(new Config($pathHelper->getPath('config.ini')));
+    $application->getHelperSet()->set($vhostManager);
+    $application->getHelperSet()->set($configHelper);
     $application->getHelperSet()->set($pathHelper);
     $application->run();
 } catch (Exception $e) {

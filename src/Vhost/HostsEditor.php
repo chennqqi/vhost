@@ -1,13 +1,15 @@
 <?php
-namespace Vhost\Helper;
+namespace Vhost;
 
 class HostsEditor
 {
     protected $lines;
     
+    const FILE = '/etc/hosts';
+    
     public function __construct()
     {
-        $this->lines = file('/etc/hosts');
+        $this->lines = file(self::FILE);
     }
     
     public function add($ip, $name)
@@ -33,8 +35,12 @@ class HostsEditor
                 break;
             }
         }
-        
+    }
+    
+    public function write()
+    {
+        $this->lines[] = '';
         $content = join(PHP_EOL, $this->lines);
-        file_put_contents('/etc/hosts', $content);
+        file_put_contents(self::FILE, $content);
     }
 }

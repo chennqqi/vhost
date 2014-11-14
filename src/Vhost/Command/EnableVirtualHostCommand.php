@@ -1,15 +1,18 @@
 <?php
 namespace Vhost\Command;
 
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Vhost\VhostManager;
 
-class EnableVirtualHostCommand extends CreateVirtualHostCommand
+class EnableVirtualHostCommand extends Command
 {
     public function configure()
     {
         $this->setName('enable');
+        $this->setAliases(['e']);
         $this->setDescription('Enable virtual host');
         $this->setHelp('Enable virtual host');
         $this->addArgument('name', InputArgument::REQUIRED, 'Name of the host');
@@ -17,17 +20,18 @@ class EnableVirtualHostCommand extends CreateVirtualHostCommand
     
     public function execute(InputInterface $input, OutputInterface $output)
     {
+        /* @var $vhostManager VhostManager */
+        $vhostManager = $this->getHelper('vhost_manager');
         $name = $input->getArgument('name');
-        $vhostName = $this->generateHostName($name);
         
-        if ($this->isVhostEnabled($vhostName)) {
+        if ($vhostManager->isEnabled($name)) {
             return $output->writeln('This virtual host is already enabled.');
         }
         
-        if (!$this->isCached($vhostName)) {
+        if (!$vhostManager->isCached($name)) {
             return $output->writeln('Virtual host does not exists.');
         }
         
-        $this->enable($vhostName);
+        $vhostManager->enable($name);
     }
 }
