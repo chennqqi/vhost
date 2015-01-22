@@ -214,17 +214,20 @@ class vhost_class():
         os.system(self.ini.get_option('general', 'reload_command'))
 
     def enable(self, name):
-        target = self.enabled_dir + '/' + self.use_name + '.conf'
-        os.symlink(self.destination, target)
-        self.install_hosts()
+        if not self.is_exists():
+            print 'vhost does not exists'
+        else:
+            target = self.enabled_dir + '/' + self.use_name + '.conf'
+            os.symlink(self.destination, target)
+            self.install_hosts()
 
     def disable(self, name):
-        target = self.enabled_dir + '/' + self.use_name
+        target = self.enabled_dir + '/' + self.use_name + '.conf'
         os.remove(target)
         self.uninstall_hosts('%s        %s' % (self.ini.get_option('general', 'ip'), self.use_name))
 
     def is_enabled(self, name):
-        return os.path.exists(self.enabled_dir + '/' + self.use_name)
+        return os.path.exists(self.enabled_dir + '/' + self.use_name + '.conf')
 
     def drop_database(self):
         binary = self.ini.get_option('mysql', 'executable')

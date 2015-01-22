@@ -182,11 +182,13 @@ def main():
         vhost.apache_reload()
 
     elif (options.enable == True):
-        if (vhost.is_enabled(name) == False):
-            vhost.enable(name)
-            vhost.apache_reload()
-        else:
+        if not vhost.is_exists():
+            print '* Vhost %s does not exists.' % name
+        elif vhost.is_enabled(name):
             print '* Vhost %s is already enabled' % name
+        else:
+            vhost.enable(name)
+            vhost.apache_reload()        
 
     elif (options.disable == True):
         if (vhost.is_enabled(name)):
