@@ -18,7 +18,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import argparse, getpass, sys, logging, configparser, os, subprocess
+import argparse, getpass, sys, logging, configparser, os, subprocess, pwd, grp
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -33,9 +33,12 @@ if len(config_files) == 0:
 config = configparser.ConfigParser()
 config.read(configs)
 
-if getpass.getuser() != 'root':
-    print ('* You must be root to use this program.')
-    sys.exit()
+uid = pwd.getpwnam(config.get('general', 'user')).pw_uid
+gid = grp.getgrnam(config.get('general', 'group')).gr_gid
+
+class SkipFilter(logging.Filter):
+    def filter(self, record):
+        return False
 
 def restart_httpd():
     subprocess.call(config.get('commands', 'httpd_reload').split())
@@ -98,14 +101,18 @@ def is_enabled(name):
     return exists(path)
 
 def _create(args):
-    logger.info('Create: %s', args.name)
+    if not args.dump:
+        if os.path.exists(get_vhost_avail_path(args.name)):
+            logger.warning('--> vhost exists. you may want to enable this?')
+            sys.exit()
+    else:
+        logger.addFilter(SkipFilter())
 
-    if os.path.exists(get_vhost_avail_path(args.name)):
-        logger.warning('--> vhost exists. you may want to enable this?')
-        sys.exit()
+    logger.info('Create: %s', args.name)
 
     sitesroot = config.get('general', 'sites_dir', fallback='/var/www')
     template = find_file((os.getenv('HOME') + '/.vhost/share/vhost.conf', '/etc/vhost/share/vhost.conf', 'share/vhost.conf'))[0]
+    logger.debug('Use template: %s' % template)
     contents = open(template).read()
     contents = contents\
         .replace('%name%', get_sitename(args.name))\
@@ -118,6 +125,8 @@ def _create(args):
         subdir = '/' + subdir
     contents = contents.replace('%subdir%', subdir)
 
+    port = 80
+    ssl_content = ''
     if args.ssl:
         ssl_part = find_file((os.getenv('HOME') + '/.vhost/share/ssl.conf', '/etc/vhost/ssl.conf', 'share/ssl.conf'))[0]
         if not ssl_part:
@@ -135,12 +144,15 @@ def _create(args):
         if not os.path.exists(key_file):
             raise Exception('File not found: %s' % key_file)
 
+        port = 443
         ssl_content = open(ssl_part).read()
         ssl_content = ssl_content.replace('%cert_file%', cert_file).replace('%key_file%', key_file)
 
-        contents = contents.replace('%ssl%', ssl_content)
-    else:
-        contents = contents.replace('%ssl%', '')
+    contents = contents.replace('%ssl%', ssl_content).replace('%port%', str(port))
+
+    if args.dump:
+        print (contents)
+        sys.exit()
 
     # open file and write contents
     avail_vhost_path = get_vhost_avail_path(args.name)
@@ -148,8 +160,14 @@ def _create(args):
     output = open(avail_vhost_path, 'w')
     output.write(contents)
     output.close()
+    os.chown(avail_vhost_path, uid, gid)
 
     dirs = ('log', 'www' + subdir, 'tmp')
+    site_root = '%s/%s' % (sitesroot, get_sitename(args.name))
+    if not os.path.exists(site_root):
+        os.mkdir(site_root)
+        os.chown(site_root, uid, gid)
+
     for dir in dirs:
         new_dir = '%s/%s/%s' % (sitesroot, get_sitename(args.name), dir)
         logger.info('Create directory: %s' % new_dir)
@@ -157,6 +175,7 @@ def _create(args):
             logger.warning('--> already exists')
         else:
             os.makedirs(new_dir)
+            os.chown(new_dir, uid, gid)
 
     if args.sample:
         sample_index = '%s/%s/www/index.html' % (sitesroot, get_sitename(args.name))
@@ -166,6 +185,7 @@ def _create(args):
         out = open(sample_index, 'w')
         out.write(index_contents)
         out.close()
+        os.chown(sample_index, uid, gid)
         logger.info('--> add index.html: %s' % sample_index)
 
 def _enable(args):
@@ -175,6 +195,7 @@ def _enable(args):
     else:
         if exists(get_vhost_avail_path(args.name)):
             os.symlink(get_vhost_avail_path(args.name), get_vhost_enabl_path(args.name))
+            os.chown(get_vhost_enabl_path(args.name), uid, gid)
             add_to_hosts(get_sitename(args.name))
             restart_httpd()
         else:
@@ -207,6 +228,7 @@ def main():
     parser.add_argument('--sample', help='add sample index.html file', action='store_true', dest='sample', default=None)
     parser.add_argument('--ip', help='bind to that IP address', action='store', dest='ip', default='*')
     parser.add_argument('--ssl', help='use SSL for that vhost', action='store_true', dest='ssl', default=False)
+    parser.add_argument('--dump', help='dump vhost config', action='store_true', dest='dump', default=False)
 
     # enable
     group.add_argument('-e', '--enable', help='enable existing vhost', action='store_true', dest='enable', default=False)
@@ -218,6 +240,11 @@ def main():
     parser.add_argument('name', action='store', default=False, help='vhost name')
 
     args = parser.parse_args()
+
+    if not args.dump:
+        if getpass.getuser() != 'root':
+            print ('* You must be root to use this program.')
+            sys.exit()
 
     try:
         if args.create:

@@ -4,7 +4,7 @@ if [[ ! -d ~/.vhost ]] ; then
     mkdir -p ~/.vhost
 fi
 
-cp -vR share ~/.vhost/share
+cp -vR share ~/.vhost
 cp -v vhost.conf ~/.vhost/vhost.conf
 sudo cp -v vhost.py /usr/bin/vhost
 
