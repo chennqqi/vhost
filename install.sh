@@ -1,23 +1,11 @@
 #!/usr/bin/env bash
-python -c 'import sys; print(sys.version[:3])' > ver
 
-if [ -f "/usr/bin/vhost" ];
-then
-echo 'Reinstallation.'
-else
-echo 'Installation.'
+if [[ ! -d ~/.vhost ]] ; then
+    mkdir -p ~/.vhost
 fi
 
-echo 'Installing directories'
-mkdir -p ~/.vhost/var
-mkdir -p ~/.vhost/share
+cp -vR share ~/.vhost/share
+cp -v vhost.conf ~/.vhost/vhost.conf
+sudo cp -v vhost.py /usr/bin/vhost
 
-echo 'Installing files'
-cp -R --remove-destination etc/config.ini ~/.vhost/
-cp -R --remove-destination share/* ~/.vhost/share
-cp -R --remove-destination vhost.py /usr/bin/vhost
-cp -R --remove-destination include/*.py /usr/lib/python`cat ver`
-
-chmod +x /usr/bin/vhost
-
-echo 'Done. Now run vhost -h to get help'
+xdg-open ~/.vhost/vhost.conf
