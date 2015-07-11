@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 configs = (os.getenv('HOME') + '/.vhost/vhost.conf', '/etc/vhost.conf', 'vhost.conf')
 
 config_files = [config for config in configs if os.path.exists(config)]
+
 if len(config_files) == 0:
     logger.error('Vhost is not configured. Configure ~/.vhost.conf first.')
     sys.exit(1)
@@ -236,12 +237,15 @@ def main():
     # disable
     group.add_argument('-d', '--disable', help='disable vhost', action='store_true', dest='disable', default=False)
 
+    # disable
+    group.add_argument('-a', '--alter', help='alter vhost', action='store_true', dest='alter', default=False)
+
     # vhost name
     parser.add_argument('name', action='store', default=False, help='vhost name')
 
     args = parser.parse_args()
 
-    if not args.dump:
+    if not args.dump and not args.alter:
         if getpass.getuser() != 'root':
             print ('* You must be root to use this program.')
             sys.exit()
@@ -254,8 +258,13 @@ def main():
             _enable(args)
         elif args.disable:
             _disable(args)
+        elif args.alter:
+            if not exists(get_vhost_avail_path(args.name)):
+                raise Exception('vhost "%s" does not exists' % args.name)
+            subprocess.call(['xdg-open', get_vhost_avail_path(args.name)])
     except Exception as e:
-        print(e)
+        logger.critical(str(e))
+        sys.exit()
 
 if __name__ == '__main__':
     try:

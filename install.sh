@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
-if [[ ! -d ~/.vhost ]] ; then
+DIR=/home/`whoami`/.vhost
+if [[ ! -d $DIR ]] ; then
     mkdir -p ~/.vhost
 fi
 
 cp -vR share ~/.vhost
-cp -v vhost.conf ~/.vhost/vhost.conf
 sudo cp -v vhost.py /usr/bin/vhost
+sudo ln -sv $DIR /root/.vhost
 
-xdg-open ~/.vhost/vhost.conf
+if [ ! -f ~/.vhost/vhost.conf ]; then
+    cp -v vhost.conf ~/.vhost/vhost.conf
+    xdg-open ~/.vhost/vhost.conf
+fi
+
