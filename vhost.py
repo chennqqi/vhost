@@ -42,7 +42,7 @@ class SkipFilter(logging.Filter):
         return False
 
 def restart_httpd():
-    subprocess.call(config.get('commands', 'httpd_reload').split())
+    subprocess.call(config.get('apache', 'restart_command').split())
 
 def exists(path):
     return os.path.exists(path)
@@ -100,6 +100,28 @@ def remove_from_hosts(sitename):
 def is_enabled(name):
     path = get_vhost_enabl_path(name)
     return exists(path)
+
+def has_mysql_module():
+    has = False
+    try:
+        import importlib
+        importlib.import_module('mysql.connector')
+        has = True
+    except:
+        pass
+    return has
+
+def get_mysql_connection():
+    import mysql.connector
+    from mysql.connector import errorcode
+    mysql_user = config.get('mysql', 'user')
+    mysql_pass = config.get('mysql', 'password')
+    mysql_host = config.get('mysql', 'host')
+    return mysql.connector.connect(user=mysql_user, password=mysql_pass, host=mysql_host)
+
+def get_site_root(name):
+    sitesroot = config.get('general', 'sites_dir', fallback='/var/www')
+    return '%s/%s' % (sitesroot, get_sitename(name))
 
 def _create(args):
     if not args.dump:
@@ -189,6 +211,18 @@ def _create(args):
         os.chown(sample_index, uid, gid)
         logger.info('--> add index.html: %s' % sample_index)
 
+    if args.mysql:
+        if has_mysql_module():
+            try:
+                mysql_charset = config.get('mysql', 'charset')
+                connection = get_mysql_connection()
+                logger.info('--> add mysql database: %s' % args.name)
+                connection._execute_query('CREATE DATABASE %s CHARACTER SET %s' % (args.name, mysql_charset))
+            except Exception as e:
+                logger.error('MySQL error: %s' % str(e))
+        else:
+            logger.error('MySQL: cannot load connector. Install module: python-mysql-connector')
+
 def _enable(args):
     logger.info('Enable: %s' % args.name)
     if is_enabled(args.name):
@@ -214,6 +248,58 @@ def _disable(args):
     else:
         logger.error('--> vhost does not exists')
 
+def _remove(args):
+    logger.info('Remove vhost')
+    _disable(args)
+    if exists(get_vhost_avail_path(args.name)):
+        os.remove(get_vhost_avail_path(args.name))
+
+    if args.purge:
+        site_root = get_site_root(args.name)
+
+        if exists(site_root):
+            logger.info('--> remove site files in: %s' % site_root)
+
+            import shutil
+            shutil.rmtree(site_root)
+        else:
+            logger.warning('--> site root does not exists in: %s' % site_root)
+
+    if args.mysql:
+        if has_mysql_module():
+            connection = get_mysql_connection()
+            connection._execute_query('DROP DATABASE IF EXISTS %s' % args.name)
+            logger.warning('--> database has been dropped')
+        else:
+            logger.error('MySQL: cannot load connector. Install module: python-mysql-connector')
+
+def _info(args):
+    if exists(get_vhost_avail_path(args.name)):
+        print ('Config path: %s' % get_vhost_avail_path(args.name))
+        print ('Host enabled: %s' % exists(get_vhost_enabl_path(args.name)))
+        print ('Site root: %s' % get_site_root(args.name))
+        print ('Site root exists: %s' % exists(get_site_root(args.name)))
+
+        connection = get_mysql_connection()
+        cursor = connection.cursor()
+        cursor.execute('SELECT COUNT(*) AS exist FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = "%s"' % args.name)
+        db_exists = False
+        for exist in cursor:
+            db_exists = (exist[0] == 1)
+            break
+        print ('Has database: %s' % db_exists)
+    else:
+        logger.critical('Vhost does not exists: %s' % args.name)
+
+def _list(args):
+    dir = config.get('apache', 'dir_hosts_available', fallback='/etc/apache2/sites-available')
+    if args.only_enabled:
+        dir = config.get('apache', 'dir_hosts_enabled', fallback='/etc/apache2/sites-enabled')
+
+    for (dirpath, dirnames, filenames) in os.walk(dir):
+        for file in filenames:
+            print (file)
+
 def main():
     parser = argparse.ArgumentParser(
         prog='vhost',
@@ -230,6 +316,7 @@ def main():
     parser.add_argument('--ip', help='bind to that IP address', action='store', dest='ip', default='*')
     parser.add_argument('--ssl', help='use SSL for that vhost', action='store_true', dest='ssl', default=False)
     parser.add_argument('--dump', help='dump vhost config', action='store_true', dest='dump', default=False)
+    parser.add_argument('--mysql', help='create mysql database with same name as vhost', action='store_true', dest='mysql', default=False)
 
     # enable
     group.add_argument('-e', '--enable', help='enable existing vhost', action='store_true', dest='enable', default=False)
@@ -237,8 +324,19 @@ def main():
     # disable
     group.add_argument('-d', '--disable', help='disable vhost', action='store_true', dest='disable', default=False)
 
-    # disable
-    group.add_argument('-a', '--alter', help='alter vhost', action='store_true', dest='alter', default=False)
+    # alter
+    group.add_argument('-a', '--alter', help='alter vhost (opens GUI editor)', action='store_true', dest='alter', default=False)
+
+    # remove
+    group.add_argument('-r', '--remove', help='remove vhost', action='store_true', dest='remove', default=False)
+    parser.add_argument('--purge', help='also remove site files', action='store_true', dest='purge', default=False)
+
+    # list
+    parser.add_argument('-l', '--list', help='list vhosts', action='store_true', dest='list', default=False)
+    parser.add_argument('--enabled', help='show only enabled vhosts', action='store_true', dest='only_enabled', default=False)
+
+    # info
+    parser.add_argument('-i', '--info', help='vhosts details', action='store_true', dest='info', default=False)
 
     # vhost name
     parser.add_argument('name', action='store', default=False, help='vhost name')
@@ -258,6 +356,12 @@ def main():
             _enable(args)
         elif args.disable:
             _disable(args)
+        elif args.remove:
+            _remove(args)
+        elif args.list:
+            _list(args)
+        elif args.info:
+            _info(args)
         elif args.alter:
             if not exists(get_vhost_avail_path(args.name)):
                 raise Exception('vhost "%s" does not exists' % args.name)
