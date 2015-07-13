@@ -343,7 +343,7 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.dump and not args.alter:
+    if not args.dump and not args.alter and not args.list and not args.info:
         if getpass.getuser() != 'root':
             print ('* You must be root to use this program.')
             sys.exit()
