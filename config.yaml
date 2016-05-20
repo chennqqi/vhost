@@ -1,0 +1,22 @@
+apache:
+    dir_sites_enabled: ./chroot/sites-enabled
+    dir_sites_available: ./chroot/sites-available
+    restart_command: systemctl reload httpd
+    vhost_file_suffix: .lan.conf
+
+general:
+    domain: .lan
+    sites_dir: ./chroot/www
+    hosts_file: ./chroot/hosts
+    user: alex
+    group: alex
+
+mysql:
+    user: root
+    password: 111111
+    host: localhost
+    charset: utf8
+
+ssl:
+    cert_file: ./chroot/ssl/server.crt
+    key_file: ./chroot/ssl/server.key
