@@ -12,16 +12,13 @@ var paths = []string {
 }
 
 // FindFile finds filename in paths
-func FindFile(filename string) (pathname string, found bool) {
+func FindFile(filename string) (pathname string, err error) {
     for _, path := range paths {
         var pathname = path + filename
         if _, err := os.Stat(pathname); err == nil {
             abspath, err := filepath.Abs(pathname)
-            if err != nil {
-                panic(err)
-            } 
-            return abspath, true
+            return abspath, err
         }
     }
-    return "", false
+    return "", nil
 }

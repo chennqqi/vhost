@@ -47,8 +47,8 @@ type Config struct {
 
 // LoadConfig config file into object
 func LoadConfig() Config {
-    configFile, found := FindFile("config.yaml")
-    if !found {
+    configFile, err := FindFile("config.yaml")
+    if err != nil {
         panic("Config file was not found")
     }
     
