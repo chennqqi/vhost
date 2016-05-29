@@ -50,6 +50,9 @@ func (h *Hosts) IsWritable() bool {
 
 // Add a new item to /etc/hosts
 func (h *Hosts) Add(ip string, domain string) {
+    if (ip == "*") {
+        ip = "127.0.0.1"
+    }
     line := HostLine{
         IP: ip,
         Hosts: []string{domain},

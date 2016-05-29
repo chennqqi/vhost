@@ -3,6 +3,7 @@ apache:
     dir_sites_available: ./chroot/sites-available
     restart_command: systemctl reload httpd
     vhost_file_suffix: .lan.conf
+    domain: .lan
 
 general:
     domain: .lan

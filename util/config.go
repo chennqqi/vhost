@@ -12,6 +12,7 @@ type Apache struct {
     DirSitesAvailable string `yaml:"dir_sites_available"`
     VhostFileSuffix string `yaml:"vhost_file_suffix"`
     RestartCommand string `yaml:"restart_command"`
+    Domain string `yaml:"domain"`
 }
 
 // General struct
