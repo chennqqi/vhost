@@ -1,4 +1,4 @@
-// Copyright © 2016 Alex Oleshkevich <alex.oleshkevich@gmail.com>
+// Copyright © 2017 Alex Oleshkevich <alex.oleshkevich@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,8 @@
 
 package main
 
-import (
-	"fmt"
-	"os" 
-	"github.com/alex-oleshkevich/vhost/cmd"
-)
+import "github.com/alex-oleshkevich/vhost/cmd"
 
 func main() {
-    if err := cmd.RootCmd.Execute(); err != nil {
-        fmt.Println(err)
-        os.Exit(-1)
-    }
+	cmd.Execute()
 }
