@@ -22,7 +22,9 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -48,17 +50,16 @@ type TemplateVars struct {
 	ProjectPath  string
 	Domain       string
 	DomainSuffix string
+	Preset       string
 }
 
 var (
-	httpAddress string
-	httpPort    string
+	templateData TemplateVars
+	dbCreate     bool
+	dbName       string
+	dbType       string
+	nginxPresets utils.ArrayFlags
 )
-
-var templateData TemplateVars
-var dbCreate bool
-var dbName string
-var dbType string
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -66,14 +67,6 @@ var initCmd = &cobra.Command{
 	Short: "Initialize a new project",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// defer func() {
-		// 	if r := recover(); r != nil {
-		// 		if templateData.ProjectPath != "" && utils.DirectoryExists(templateData.ProjectPath) {
-		// 			os.RemoveAll(templateData.ProjectPath)
-		// 		}
-		// 	}
-		// }()
-
 		lockfile := models.Lock{}
 
 		if len(args) == 0 {
@@ -153,7 +146,7 @@ var initCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 
-		projectPath, err := filepath.Abs(targetDirectory)
+		projectPath, err := filepath.Abs(".")
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -162,12 +155,38 @@ var initCmd = &cobra.Command{
 		templateData.Domain = projectName
 		templateData.DomainSuffix = viper.GetString("domain")
 
-		err = t.Execute(writer, templateData)
+		// generate ssl keys
+		var dnsname = fmt.Sprintf("%s.%s", projectName, templateData.DomainSuffix)
+		utils.GenerateCert([]string{dnsname}, "etc")
 
+		// install nginx vhost presets
+		if len(nginxPresets) == 0 {
+			nginxPresets = append(nginxPresets, "default")
+		}
+
+		buff := bytes.NewBufferString("")
+		for _, preset := range nginxPresets {
+			presetFilePath, err := utils.FindFileInApp(fmt.Sprintf("presets/%s.tpl", preset))
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			log.Infof("Add nginx preset: %s", preset)
+			presetFileContents, err := ioutil.ReadFile(presetFilePath)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			buff.WriteString("    # preset: " + preset + "\n")
+			buff.Write(presetFileContents)
+		}
+		templateData.Preset = buff.String()
+
+		err = t.Execute(writer, templateData)
 		if err != nil {
 			log.Panicln(err)
 		}
 
+		// install nginx config
 		realConfDest := fmt.Sprintf("%s/%s.conf", viper.GetString("sites-enabled"), projectName)
 		realConfDest, err = filepath.Abs(realConfDest)
 		if err != nil {
@@ -251,4 +270,5 @@ func init() {
 	initCmd.Flags().StringVar(&templateData.Port, "port", "80", "IP address to bind to")
 	initCmd.Flags().StringVar(&dbType, "dbtype", "mysql", "Database type: mysql, postgres")
 	initCmd.Flags().StringVar(&dbName, "dbname", "", "Database name")
+	initCmd.Flags().Var(&nginxPresets, "preset", "A nginx config presets")
 }

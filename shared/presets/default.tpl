@@ -1,0 +1,4 @@
+    location / {
+        autoindex on;
+    }
+    

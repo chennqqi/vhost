@@ -5,7 +5,27 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 )
+
+var paths []string
+
+func init() {
+	appHomeDir, err := GetLocalDir()
+	if err != nil {
+		appHomeDir = ""
+	}
+
+	sharedpath, err := filepath.Abs("shared")
+	if err != nil {
+		sharedpath = ""
+	}
+	paths = []string{
+		sharedpath,
+		appHomeDir,
+		"/etc/vhost",
+	}
+}
 
 // GetLocalDir returns apps directory in user's home.
 func GetLocalDir() (string, error) {
@@ -49,14 +69,5 @@ func FindFile(filename string, paths []string) (string, error) {
 
 // FindFileInApp looks for files in application directories
 func FindFileInApp(filename string) (string, error) {
-	homeDir, err := GetLocalDir()
-	if err != nil {
-		return "", err
-	}
-
-	paths := []string{
-		homeDir,
-		"/etc/vhost",
-	}
 	return FindFile(filename, paths)
 }

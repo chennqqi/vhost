@@ -39,13 +39,9 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
-// Execute adds all child commands to the root command sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// Execute command
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		log.Fatalln(err)
@@ -55,13 +51,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports Persistent Flags, which, if defined here,
-	// will be global for your application.
-
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.vhost.yaml)")
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/vhost/config.yaml)")
 	RootCmd.PersistentFlags().BoolVar(&debugMode, "debug", false, "Enable debug output.")
 }
 
