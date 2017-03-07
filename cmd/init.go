@@ -24,12 +24,15 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"text/template"
 
 	"path/filepath"
 
 	"os/exec"
+
+	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/alex-oleshkevich/vhost/models"
@@ -89,6 +92,16 @@ var initCmd = &cobra.Command{
 		log.Infof("Initializing project %s in %s", projectName, targetDirectory)
 		if utils.DirectoryExists(targetDirectory) {
 			log.Warnf("Directory %s already exists.", targetDirectory)
+			lfname := path.Join(targetDirectory, models.LockFilename)
+			if utils.FileExists(lfname) {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Print("Seems there is another project in the target directory. Overwrite? y,n ")
+				text, _ := reader.ReadString('\n')
+				if strings.TrimSpace(text) != "y" {
+					log.Infoln("Cancel.")
+					return
+				}
+			}
 		}
 
 		if dbName != "" {
@@ -114,14 +127,6 @@ var initCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		os.Chdir(targetDirectory)
-
-		if lockfile.Exists() {
-			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Seens there is another project in the target directory. Overwrite? y,n")
-			text, _ := reader.ReadString('\n')
-			fmt.Println(text)
-			return
-		}
 
 		for _, dir := range []string{"etc", "log", "tmp", "www"} {
 			if utils.DirectoryExists(dir) {
