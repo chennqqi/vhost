@@ -65,7 +65,7 @@ func GenerateCert(hosts []string, outdir string) error {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			// CommonName:   hosts[0],
+			CommonName:   hosts[0],
 			Organization: []string{"Acme Co"},
 		},
 		NotBefore: notBefore,
