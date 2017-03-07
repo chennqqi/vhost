@@ -82,12 +82,16 @@ func initConfig() {
 	viper.AddConfigPath("/etc/vhost")   // adding global directory as search path
 	viper.AutomaticEnv()                // read in environment variables that match
 
-	viper.SetDefault("nginx", map[string]string{
-		"sites-enabled":  "/etc/nginx/sites-enabled",
-		"domain":         ".lan",
-		"config-suffix":  ".conf",
-		"reload-command": "/usr/bin/systemctl reload nginx",
-	})
+	viper.SetDefault("sites-enabled", "/etc/nginx/sites-enabled")
+	viper.SetDefault("domain", ".lan")
+	viper.SetDefault("mysql-host", "127.0.0.1")
+	viper.SetDefault("mysql-port", "3306")
+	viper.SetDefault("mysql-user", "root")
+	viper.SetDefault("mysql-pass", "")
+	viper.SetDefault("postgres-host", "127.0.0.1")
+	viper.SetDefault("postgres-port", "5432")
+	viper.SetDefault("postgres-user", "postgres")
+	viper.SetDefault("postgres-pass", "")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {

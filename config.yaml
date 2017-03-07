@@ -1,3 +1,4 @@
 sites-enabled: /tmp/sites-enabled
-domain-suffix: .lan
+domain: .lan
+mysql-pass: 111111
 

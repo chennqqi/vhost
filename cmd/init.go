@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -31,6 +32,7 @@ import (
 	"os/exec"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/alex-oleshkevich/vhost/models"
 	"github.com/alex-oleshkevich/vhost/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -51,6 +53,9 @@ var (
 )
 
 var templateData TemplateVars
+var dbCreate bool
+var dbName string
+var dbType string
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -58,15 +63,17 @@ var initCmd = &cobra.Command{
 	Short: "Initialize a new project",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		defer func() {
-			if r := recover(); r != nil {
-				if templateData.ProjectPath != "" && utils.DirectoryExists(templateData.ProjectPath) {
-					os.RemoveAll(templateData.ProjectPath)
-				}
-			}
-		}()
+		// defer func() {
+		// 	if r := recover(); r != nil {
+		// 		if templateData.ProjectPath != "" && utils.DirectoryExists(templateData.ProjectPath) {
+		// 			os.RemoveAll(templateData.ProjectPath)
+		// 		}
+		// 	}
+		// }()
 
-		if len(args) < 0 {
+		lockfile := models.Lock{}
+
+		if len(args) == 0 {
 			log.Fatalf("Project name was not specified")
 		}
 		projectName := args[0]
@@ -84,11 +91,38 @@ var initCmd = &cobra.Command{
 			log.Warnf("Directory %s already exists.", targetDirectory)
 		}
 
+		if dbName != "" {
+			if !isDbSupported(dbType) {
+				log.Fatalf("Database driver not supported: %s", dbType)
+			}
+
+			log.Infof("Create %s database %s", dbType, dbName)
+			switch dbType {
+			case "mysql":
+				err = createMySQLDatabase(dbName)
+			case "postgres":
+				err = createPostgresDatabase(dbName)
+			}
+
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+
 		err = os.MkdirAll(targetDirectory, 0755)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		os.Chdir(targetDirectory)
+
+		if lockfile.Exists() {
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Print("Seens there is another project in the target directory. Overwrite? y,n")
+			text, _ := reader.ReadString('\n')
+			fmt.Println(text)
+			return
+		}
+
 		for _, dir := range []string{"etc", "log", "tmp", "www"} {
 			if utils.DirectoryExists(dir) {
 				log.Warnf("Directory %s exists.", dir)
@@ -121,7 +155,7 @@ var initCmd = &cobra.Command{
 
 		templateData.ProjectPath = projectPath
 		templateData.Domain = projectName
-		templateData.DomainSuffix = viper.GetString("domain-suffix")
+		templateData.DomainSuffix = viper.GetString("domain")
 
 		err = t.Execute(writer, templateData)
 
@@ -132,7 +166,7 @@ var initCmd = &cobra.Command{
 		realConfDest := fmt.Sprintf("%s/%s.conf", viper.GetString("sites-enabled"), projectName)
 		realConfDest, err = filepath.Abs(realConfDest)
 		if err != nil {
-			log.Panicln(err)
+			log.Fatalln(err)
 		}
 		if utils.FileExists(realConfDest) {
 			log.Warnf("Vhost is already enabled in %s.", realConfDest)
@@ -147,7 +181,7 @@ var initCmd = &cobra.Command{
 		log.Debugf("Link %s -> %s", realConfSrc, realConfDest)
 		err = os.Symlink(realConfSrc, realConfDest)
 		if err != nil {
-			log.Panicln(err)
+			log.Fatalln(err)
 		}
 
 		shellCmd := exec.Command("/usr/bin/systemctl", "reload", "nginx")
@@ -156,11 +190,60 @@ var initCmd = &cobra.Command{
 			log.Panicln(err)
 		}
 		log.Debugln(shellCmd.CombinedOutput())
+
+		lockfile.DbName = dbName
+		lockfile.DbType = dbType
+		lockfile.VhostLinkPath = realConfDest
+
+		err = lockfile.Write()
+		if err != nil {
+			log.Fatalln(err)
+		}
 	},
+}
+
+func isDbSupported(dbtype string) bool {
+	return utils.InArray(dbType, []string{"mysql", "postgres"})
+}
+
+func createMySQLDatabase(dbname string) error {
+	db, err := utils.GetMySQLDb()
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", dbname)
+	_, err = db.Exec(sql)
+	return err
+}
+
+func createPostgresDatabase(dbname string) error {
+	db, err := utils.GetPostgresDb()
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname = '%s'", dbname)
+	rows, err := db.Query(sql)
+	if err != nil {
+		return err
+	}
+	if rows.Next() {
+		log.Warningln("Postgres database already exists.")
+		return nil
+	}
+
+	_, err = db.Query(fmt.Sprintf("CREATE DATABASE %s", dbname))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func init() {
 	RootCmd.AddCommand(initCmd)
-	initCmd.Flags().StringVarP(&templateData.IP, "ip", "i", "127.0.0.1", "IP address to bind to")
-	initCmd.Flags().StringVarP(&templateData.Port, "port", "p", "80", "IP address to bind to")
+	initCmd.Flags().StringVar(&templateData.IP, "ip", "127.0.0.1", "IP address to bind to")
+	initCmd.Flags().StringVar(&templateData.Port, "port", "80", "IP address to bind to")
+	initCmd.Flags().StringVar(&dbType, "dbtype", "mysql", "Database type: mysql, postgres")
+	initCmd.Flags().StringVar(&dbName, "dbname", "", "Database name")
 }
