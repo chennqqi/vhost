@@ -1,4 +1,2 @@
-sites-enabled: /tmp/sites-enabled
-domain: .lan
+sites-enabled: /home/alex/web/sites-enabled
 mysql-pass: 111111
-

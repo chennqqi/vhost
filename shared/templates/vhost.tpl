@@ -9,7 +9,7 @@ server {
     listen 443 http2 ssl;
     
     ssl on;
-    ssl_certificate {{ .ProjectPath }}/etc/cert.pem;
+    ssl_certificate {{ .ProjectPath }}/etc/cert.crt;
     ssl_certificate_key {{ .ProjectPath }}/etc/key.pem;
 
 {{ .Preset }}

@@ -54,7 +54,7 @@ func GenerateCert(hosts []string, outdir string) error {
 	}
 
 	var notBefore = time.Now()
-	notAfter := notBefore.Add(365 * 24 * time.Hour)
+	notAfter := notBefore.Add(3 * 365 * 24 * time.Hour)
 
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
@@ -65,8 +65,12 @@ func GenerateCert(hosts []string, outdir string) error {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:   hosts[0],
-			Organization: []string{"Acme Co"},
+			// CommonName:   hosts[0],
+			Organization: []string{"1st Vhost Tool Test CA"},
+		},
+		Issuer: pkix.Name{
+			// CommonName:   "1st Vhost Tool Test CA",
+			Organization: []string{"1st Vhost Tool Test CA 1"},
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,
@@ -94,7 +98,7 @@ func GenerateCert(hosts []string, outdir string) error {
 		return fmt.Errorf("Failed to create certificate: %s", err)
 	}
 
-	certFile := path.Join(outdir, "cert.pem")
+	certFile := path.Join(outdir, "cert.crt")
 	certOut, err := os.Create(certFile)
 	if err != nil {
 		return fmt.Errorf("failed to open cert.pem for writing: %s", err)
