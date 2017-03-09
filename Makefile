@@ -1,7 +1,7 @@
 .ONESHELL:
 
 build:
-	go build -o vhost main.go
+	go build
 
 install: build
 install:

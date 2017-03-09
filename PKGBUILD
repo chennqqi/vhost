@@ -1,7 +1,7 @@
 pkgname=(
     'vhost-git'
 )
-pkgver=2.0.beta.r0.g3e29191
+pkgver=2.0.beta.r1.g26f2a26
 pkgrel=1
 pkgdesc='nginx virtual hosts and database manager'
 arch=('any')
@@ -20,10 +20,9 @@ package() {
     cd "$srcdir/${pkgname}/"
     go get github.com/tools/godep
     godep restore
-    pwd
     make build
     install -Dm 644 "LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}"
-    cp -pR "vhost" "${pkgdir}/usr/local/bin/vhost"
+    cp -pR "${pkgname}" "${pkgdir}/usr/local/bin/vhost"
     mkdir "${pkgdir}/etc/vhost"
     cp -r "shared/*" "${pkgdir}/etc/vhost"
     cp -r "config.yaml" "${pkgdir}/etc/vhost/config.yaml.dist"
