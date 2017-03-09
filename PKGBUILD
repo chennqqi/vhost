@@ -1,7 +1,7 @@
 pkgname=(
     'vhost-git'
 )
-pkgver=2.0.beta.r2.gd329b73
+pkgver=2.0.beta.r3.g7737a54
 pkgrel=1
 pkgdesc='nginx virtual hosts and database manager'
 arch=('any')

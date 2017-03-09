@@ -76,6 +76,8 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			log.Panicln(err)
 		}
+
+		targetDirectory = path.Join(targetDirectory, projectName)
 		if len(args) >= 2 {
 			targetDirectory = args[1]
 		}
