@@ -1,7 +1,7 @@
 pkgname=(
     'vhost-git'
 )
-pkgver=2.0.beta.r1.g26f2a26
+pkgver=2.0.beta.r2.gd329b73
 pkgrel=1
 pkgdesc='nginx virtual hosts and database manager'
 arch=('any')
@@ -22,8 +22,10 @@ package() {
     godep restore
     make build
     install -Dm 644 "LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}"
-    cp -pR "${pkgname}" "${pkgdir}/usr/local/bin/vhost"
-    mkdir "${pkgdir}/etc/vhost"
-    cp -r "shared/*" "${pkgdir}/etc/vhost"
-    cp -r "config.yaml" "${pkgdir}/etc/vhost/config.yaml.dist"
+    install -D "${pkgname}" "${pkgdir}/usr/local/bin/vhost"
+    install -D "shared/presets/default.tpl" "${pkgdir}/etc/vhost/presets/default.tpl"
+    install -D "shared/presets/fpm.tpl" "${pkgdir}/etc/vhost/presets/fpm.tpl"
+    install -D "shared/presets/symfony.tpl" "${pkgdir}/etc/vhost/presets/symfony.tpl"
+    install -D "shared/templates/vhost.tpl" "${pkgdir}/etc/vhost/templates/vhost.tpl"
+    install -D "config.yaml" "${pkgdir}/etc/vhost/config.yaml.dist"
 }
