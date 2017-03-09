@@ -1,7 +1,7 @@
 .ONESHELL:
 
 build:
-	go build
+	go build -o vhost main.go
 
 install: build
 install:
@@ -9,3 +9,9 @@ install:
 	mkdir -p ~/.vhost
 	cp -r shared/* ~/.vhost
 	cp config.yaml ~/.vhost/config.yaml
+
+arch-pkg:
+	makepkg .
+
+
+.PHONY: build install arch-pkg

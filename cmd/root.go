@@ -82,6 +82,7 @@ func initConfig() {
 	viper.SetDefault("postgres-port", "5432")
 	viper.SetDefault("postgres-user", "postgres")
 	viper.SetDefault("postgres-pass", "")
+	viper.SetDefault("preferred-database", "mysql")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
