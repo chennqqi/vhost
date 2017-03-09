@@ -66,6 +66,7 @@ var initCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		lockfile := models.Lock{}
+		dbType = viper.GetString("preferred-database")
 
 		if len(args) == 0 {
 			log.Fatalf("Project name was not specified")
@@ -263,7 +264,7 @@ func init() {
 	RootCmd.AddCommand(initCmd)
 	initCmd.Flags().StringVar(&templateData.IP, "ip", "127.0.0.1", "IP address to bind to")
 	initCmd.Flags().StringVar(&templateData.Port, "port", "80", "IP address to bind to")
-	initCmd.Flags().StringVar(&dbType, "dbtype", viper.GetString("preferred-database"), "Database type: mysql, postgres")
+	initCmd.Flags().StringVar(&dbType, "dbtype", "", "Database type: mysql, postgres")
 	initCmd.Flags().StringVar(&dbName, "dbname", "", "Database name")
 	initCmd.Flags().Var(&nginxPresets, "preset", "A nginx config presets")
 }

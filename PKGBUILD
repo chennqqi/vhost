@@ -1,8 +1,8 @@
 pkgname=(
     'vhost-git'
 )
-pkgver=2.0.beta.r3.g7737a54
-pkgrel=1
+pkgver=2.0.beta.r4.g06055f7
+pkgrel=2
 pkgdesc='nginx virtual hosts and database manager'
 arch=('any')
 license=('MIT')
