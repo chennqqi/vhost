@@ -1,0 +1,25 @@
+{
+	"version": "0.1.0",
+	"command": "go",
+	"isShellCommand": true,
+	"args": [],
+	"showOutput": "always",
+	"tasks": [
+		{
+			"taskName": "build",
+			"args": [
+				"-x",
+				"-o",
+				"vhost"
+			],
+			"isBuildCommand": true
+		},
+		{
+			"taskName": "run",
+			"isTestCommand": true,
+			"args": [
+				"main.go"
+			]
+		}
+	]
+}

@@ -1,2 +1,4 @@
-*.pyc
-.idea
+/debug
+/vhost
+/chroot
+/vhost
